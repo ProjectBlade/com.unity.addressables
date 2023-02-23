@@ -212,7 +212,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return value;
         }
 
-        void AddBundleProvider(BundledAssetGroupSchema schema)
+        void AddBundleProvider(BundledAssetGroupSchemaBase schema)
         {
             var bundleProviderId = schema.GetBundleCachedProviderId();
 
@@ -285,7 +285,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
                 var builtinShaderBundleName = GetBuiltInShaderBundleNamePrefix(aaContext) + "_unitybuiltinshaders.bundle";
 
-                var schema = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>();
+                var schema = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchemaBase>();
                 AddBundleProvider(schema);
 
                 string monoScriptBundleName = GetMonoScriptBundleNamePrefix(aaContext);
@@ -959,8 +959,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         loc.BundleFileId = catalogEntry.InternalId;
 
                         //This is where we strip out the temporary hash added to the bundle name for Content Update for the AssetEntry
-                        if (loc.parentGroup?.GetSchema<BundledAssetGroupSchema>()?.BundleNaming ==
-                            BundledAssetGroupSchema.BundleNamingStyle.NoHash)
+                        if (loc.parentGroup?.GetSchema<BundledAssetGroupSchemaBase>()?.BundleNaming ==
+                            BundledAssetGroupSchemaBase.BundleNamingStyle.NoHash)
                         {
                             loc.BundleFileId = StripHashFromBundleLocation(loc.BundleFileId);
                         }
@@ -1012,7 +1012,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             var playerDataSchema = schema as PlayerDataGroupSchema;
             if (playerDataSchema != null)
                 return ProcessPlayerDataSchema(playerDataSchema, assetGroup, aaContext);
-            var bundledAssetSchema = schema as BundledAssetGroupSchema;
+            var bundledAssetSchema = schema as BundledAssetGroupSchemaBase;
             if (bundledAssetSchema != null)
                 return ProcessBundledAssetSchema(bundledAssetSchema, assetGroup, aaContext);
             return string.Empty;
@@ -1048,7 +1048,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <param name="aaContext">The general Addressables build builderInput</param>
         /// <returns>The error string, if any.</returns>
         protected virtual string ProcessBundledAssetSchema(
-            BundledAssetGroupSchema schema,
+            BundledAssetGroupSchemaBase schema,
             AddressableAssetGroup assetGroup,
             AddressableAssetsBuildContext aaContext)
         {
@@ -1077,7 +1077,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
            if (loadPath.StartsWith("http://", StringComparison.Ordinal) && PlayerSettings.insecureHttpOption == InsecureHttpOption.NotAllowed)
                 Addressables.LogWarning($"Addressable group {assetGroup.Name} uses insecure http for its load path.  To allow http connections for UnityWebRequests, change your settings in Edit > Project Settings > Player > Other Settings > Configuration > Allow downloads over HTTP.");
 #endif
-            if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && aaContext.runtimeData.BuildTarget == BuildTarget.WebGL.ToString())
+            if (schema.Compression == BundledAssetGroupSchemaBase.BundleCompressionMode.LZMA && aaContext.runtimeData.BuildTarget == BuildTarget.WebGL.ToString())
                 Addressables.LogWarning($"Addressable group {assetGroup.Name} uses LZMA compression, which cannot be decompressed on WebGL. Use LZ4 compression instead.");
 
             var bundleInputDefs = new List<AssetBundleBuild>();
@@ -1124,7 +1124,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return generatedUniqueNames;
         }
 
-        internal static string ErrorCheckBundleSettings(BundledAssetGroupSchema schema, AddressableAssetGroup assetGroup, AddressableAssetSettings settings)
+        internal static string ErrorCheckBundleSettings(BundledAssetGroupSchemaBase schema, AddressableAssetGroup assetGroup, AddressableAssetSettings settings)
         {
             var message = string.Empty;
 
@@ -1150,7 +1150,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 message += "LoadPath: '" + loadPath + "'";
             }
 
-            if (schema.Compression == BundledAssetGroupSchema.BundleCompressionMode.LZMA && (buildLocal || loadLocal))
+            if (schema.Compression == BundledAssetGroupSchemaBase.BundleCompressionMode.LZMA && (buildLocal || loadLocal))
             {
                 Debug.LogWarningFormat("Bundle compression is set to LZMA, but group {0} uses local content.", assetGroup.Name);
             }
@@ -1158,13 +1158,13 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             return message;
         }
 
-        internal static string CalculateGroupHash(BundledAssetGroupSchema.BundleInternalIdMode mode, AddressableAssetGroup assetGroup, IEnumerable<AddressableAssetEntry> entries)
+        internal static string CalculateGroupHash(BundledAssetGroupSchemaBase.BundleInternalIdMode mode, AddressableAssetGroup assetGroup, IEnumerable<AddressableAssetEntry> entries)
         {
             switch (mode)
             {
-                case BundledAssetGroupSchema.BundleInternalIdMode.GroupGuid: return assetGroup.Guid;
-                case BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdHash: return HashingMethods.Calculate(assetGroup.Guid, Application.cloudProjectId).ToString();
-                case BundledAssetGroupSchema.BundleInternalIdMode.GroupGuidProjectIdEntriesHash:
+                case BundledAssetGroupSchemaBase.BundleInternalIdMode.GroupGuid: return assetGroup.Guid;
+                case BundledAssetGroupSchemaBase.BundleInternalIdMode.GroupGuidProjectIdHash: return HashingMethods.Calculate(assetGroup.Guid, Application.cloudProjectId).ToString();
+                case BundledAssetGroupSchemaBase.BundleInternalIdMode.GroupGuidProjectIdEntriesHash:
                     return HashingMethods.Calculate(assetGroup.Guid, Application.cloudProjectId, new HashSet<string>(entries.Select(e => e.guid))).ToString();
             }
 
@@ -1179,7 +1179,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <param name="schema">The BundledAssetGroupSchema of used to process the assetGroup.</param>
         /// <param name="entryFilter">A filter to remove AddressableAssetEntries from being processed in the build.</param>
         /// <returns>The total list of AddressableAssetEntries that were processed.</returns>
-        public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> bundleInputDefs, BundledAssetGroupSchema schema,
+        public static List<AddressableAssetEntry> PrepGroupBundlePacking(AddressableAssetGroup assetGroup, List<AssetBundleBuild> bundleInputDefs, BundledAssetGroupSchemaBase schema,
             Func<AddressableAssetEntry, bool> entryFilter = null)
         {
             var combinedEntries = new List<AddressableAssetEntry>();
@@ -1189,7 +1189,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             switch (packingMode)
             {
-                case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
+                case BundledAssetGroupSchemaBase.BundlePackingMode.PackTogether:
                 {
                     var allEntries = new List<AddressableAssetEntry>();
                     foreach (AddressableAssetEntry a in assetGroup.entries)
@@ -1203,7 +1203,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     GenerateBuildInputDefinitions(allEntries, bundleInputDefs, CalculateGroupHash(namingMode, assetGroup, allEntries), "all", ignoreUnsupportedFilesInBuild);
                 }
                     break;
-                case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
+                case BundledAssetGroupSchemaBase.BundlePackingMode.PackSeparately:
                 {
                     foreach (AddressableAssetEntry a in assetGroup.entries)
                     {
@@ -1216,7 +1216,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     }
                 }
                     break;
-                case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
+                case BundledAssetGroupSchemaBase.BundlePackingMode.PackTogetherByLabel:
                 {
                     var labelTable = new Dictionary<string, List<AddressableAssetEntry>>();
                     foreach (AddressableAssetEntry a in assetGroup.entries)
@@ -1370,7 +1370,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         void PostProcessBundles(AddressableAssetGroup assetGroup, IBundleBuildResults buildResult, AddressablesPlayerBuildResult addrResult, FileRegistry registry,
             AddressableAssetsBuildContext aaContext, Dictionary<string, string> bundleRenameMap, List<Action> postCatalogUpdateCallbacks)
         {
-            var schema = assetGroup.GetSchema<BundledAssetGroupSchema>();
+            var schema = assetGroup.GetSchema<BundledAssetGroupSchemaBase>();
             if (schema == null)
                 return;
 
@@ -1389,7 +1389,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     string outputName = null;
                     foreach ((string, string) bundleValue in bundleValues)
                     {
-                        if (schema.BundleMode == BundledAssetGroupSchema.BundlePackingMode.PackSeparately)
+                        if (schema.BundleMode == BundledAssetGroupSchemaBase.BundlePackingMode.PackSeparately)
                         {
                             if (builtBundleNames[i].StartsWith(bundleValue.Item1, StringComparison.Ordinal))
                                 outputName = bundleValue.Item2;
@@ -1431,7 +1431,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                         BundleName = Path.GetFileNameWithoutExtension(info.FileName),
                         AssetLoadMode = schema.AssetLoadMode,
                         BundleSize = GetFileSize(info.FileName),
-                        ClearOtherCachedVersionsWhenLoaded = schema.AssetBundledCacheClearBehavior == BundledAssetGroupSchema.CacheClearBehavior.ClearWhenWhenNewVersionLoaded
+                        ClearOtherCachedVersionsWhenLoaded = schema.AssetBundledCacheClearBehavior == BundledAssetGroupSchemaBase.CacheClearBehavior.ClearWhenWhenNewVersionLoaded
                     };
                     dataEntry.Data = requestOptions;
                     bundleResultInfo.InternalBundleName = requestOptions.BundleName;
@@ -1469,7 +1469,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 bundleResultInfo.FilePath = targetPath;
                 var srcPath = Path.Combine(assetGroup.Settings.buildSettings.bundleBuildPath, builtBundleNames[i]);
 
-                if (assetGroup.GetSchema<BundledAssetGroupSchema>()?.BundleNaming == BundledAssetGroupSchema.BundleNamingStyle.NoHash)
+                if (assetGroup.GetSchema<BundledAssetGroupSchemaBase>()?.BundleNaming == BundledAssetGroupSchemaBase.BundleNamingStyle.NoHash)
                     outputBundleNames[i] = StripHashFromBundleLocation(outputBundleNames[i]);
 
                 bundleRenameMap.Add(builtBundleNames[i], outputBundleNames[i]);
@@ -1486,8 +1486,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         internal void AddPostCatalogUpdatesInternal(AddressableAssetGroup assetGroup, List<Action> postCatalogUpdates, ContentCatalogDataEntry dataEntry, string targetBundlePath,
             FileRegistry registry)
         {
-            if (assetGroup.GetSchema<BundledAssetGroupSchema>()?.BundleNaming ==
-                BundledAssetGroupSchema.BundleNamingStyle.NoHash)
+            if (assetGroup.GetSchema<BundledAssetGroupSchemaBase>()?.BundleNaming ==
+                BundledAssetGroupSchemaBase.BundleNamingStyle.NoHash)
             {
                 postCatalogUpdates.Add(() =>
                 {
@@ -1535,7 +1535,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         /// <param name="info">The bundle information.</param>
         /// <param name="assetBundleName">The base name of the asset bundle.</param>
         /// <returns>Returns the asset bundle name with the provided information.</returns>
-        protected virtual string ConstructAssetBundleName(AddressableAssetGroup assetGroup, BundledAssetGroupSchema schema, BundleDetails info, string assetBundleName)
+        protected virtual string ConstructAssetBundleName(AddressableAssetGroup assetGroup, BundledAssetGroupSchemaBase schema, BundleDetails info, string assetBundleName)
         {
             if (assetGroup != null)
             {
@@ -1545,7 +1545,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
 
             string bundleNameWithHashing = BuildUtility.GetNameWithHashNaming(schema.BundleNaming, info.Hash.ToString(), assetBundleName);
             //For no hash, we need the hash temporarily for content update purposes.  This will be stripped later on.
-            if (schema.BundleNaming == BundledAssetGroupSchema.BundleNamingStyle.NoHash)
+            if (schema.BundleNaming == BundledAssetGroupSchemaBase.BundleNamingStyle.NoHash)
             {
                 bundleNameWithHashing = bundleNameWithHashing.Replace(".bundle", "_" + info.Hash.ToString() + ".bundle");
             }

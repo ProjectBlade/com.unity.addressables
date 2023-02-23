@@ -1836,11 +1836,11 @@ namespace UnityEditor.AddressableAssets.Settings
 
         private static AddressableAssetGroup CreateDefaultGroup(AddressableAssetSettings aa)
         {
-            var localGroup = aa.CreateGroup(DefaultLocalGroupName, true, false, false, null, typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchema));
-            var schema = localGroup.GetSchema<BundledAssetGroupSchema>();
+            var localGroup = aa.CreateGroup(DefaultLocalGroupName, true, false, false, null, typeof(ContentUpdateGroupSchema), typeof(BundledAssetGroupSchemaBase));
+            var schema = localGroup.GetSchema<BundledAssetGroupSchemaBase>();
             schema.BuildPath.SetVariableByName(aa, kLocalBuildPath);
             schema.LoadPath.SetVariableByName(aa, kLocalLoadPath);
-            schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
+            schema.BundleMode = BundledAssetGroupSchemaBase.BundlePackingMode.PackTogether;
             aa.m_DefaultGroup = localGroup.Guid;
             return localGroup;
         }
@@ -1852,7 +1852,7 @@ namespace UnityEditor.AddressableAssets.Settings
             if (File.Exists(assetPath))
                 return LoadGroupTemplateObject(aa, assetPath);
 
-            return aa.CreateAndAddGroupTemplate(aa.m_DefaultGroupTemplateName, "Pack assets into asset bundles.", typeof(BundledAssetGroupSchema), typeof(ContentUpdateGroupSchema));
+            return aa.CreateAndAddGroupTemplate(aa.m_DefaultGroupTemplateName, "Pack assets into asset bundles.", typeof(BundledAssetGroupSchemaBase), typeof(ContentUpdateGroupSchema));
         }
 
         private static bool LoadGroupTemplateObject(AddressableAssetSettings aa, string assetPath)

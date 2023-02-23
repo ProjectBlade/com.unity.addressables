@@ -691,7 +691,7 @@ namespace UnityEditor.AddressableAssets.Build
                 if (g == null)
                     return false;
 
-                if (!g.HasSchema<BundledAssetGroupSchema>())
+                if (!g.HasSchema<BundledAssetGroupSchemaBase>())
                 {
                     noBundledAssetGroupSchema.Add(g.Name);
                     return false;
@@ -848,7 +848,7 @@ namespace UnityEditor.AddressableAssets.Build
                 var staticSchema = group.GetSchema<ContentUpdateGroupSchema>();
                 if (staticSchema == null)
                     continue;
-                var bundleSchema = group.GetSchema<BundledAssetGroupSchema>();
+                var bundleSchema = group.GetSchema<BundledAssetGroupSchemaBase>();
                 if (bundleSchema == null)
                     continue;
 
@@ -893,10 +893,10 @@ namespace UnityEditor.AddressableAssets.Build
 
             foreach (AddressableAssetGroup group in settings.groups)
             {
-                if (group == null || !group.HasSchema<BundledAssetGroupSchema>())
+                if (group == null || !group.HasSchema<BundledAssetGroupSchemaBase>())
                     continue;
 
-                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                var schema = group.GetSchema<BundledAssetGroupSchemaBase>();
                 List<AssetBundleBuild> bundleInputDefinitions = new List<AssetBundleBuild>();
 
                 BuildScriptPackedMode.PrepGroupBundlePacking(group, bundleInputDefinitions, schema, entry => !entryGuidToDeps.ContainsKey(entry.guid));
@@ -966,9 +966,9 @@ namespace UnityEditor.AddressableAssets.Build
             {
                 if (entry.IsScene && !entriesToAdd.Contains(entry))
                 {
-                    switch (entry.parentGroup.GetSchema<BundledAssetGroupSchema>().BundleMode)
+                    switch (entry.parentGroup.GetSchema<BundledAssetGroupSchemaBase>().BundleMode)
                     {
-                        case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
+                        case BundledAssetGroupSchemaBase.BundlePackingMode.PackTogether:
                             //Add every scene in the group to modified entries
                             foreach (AddressableAssetEntry sharedGroupEntry in entry.parentGroup.entries)
                             {
@@ -981,7 +981,7 @@ namespace UnityEditor.AddressableAssets.Build
 
                             break;
 
-                        case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
+                        case BundledAssetGroupSchemaBase.BundlePackingMode.PackTogetherByLabel:
                             foreach (AddressableAssetEntry sharedGroupEntry in entry.parentGroup.entries)
                             {
                                 //Check if one entry has 0 labels while the other contains labels.  The labels union check below will return true in this case.
@@ -999,7 +999,7 @@ namespace UnityEditor.AddressableAssets.Build
 
                             break;
 
-                        case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
+                        case BundledAssetGroupSchemaBase.BundlePackingMode.PackSeparately:
                             //Do nothing.  The scene will be in a different bundle.
                             break;
 
@@ -1043,10 +1043,10 @@ namespace UnityEditor.AddressableAssets.Build
         public static void CreateContentUpdateGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> items, string groupName)
         {
             var contentGroup = settings.CreateGroup(settings.FindUniqueGroupName(groupName), false, false, true, null);
-            var schema = contentGroup.AddSchema<BundledAssetGroupSchema>();
+            var schema = contentGroup.AddSchema<BundledAssetGroupSchemaBase>();
             schema.BuildPath.SetVariableByName(settings, AddressableAssetSettings.kRemoteBuildPath);
             schema.LoadPath.SetVariableByName(settings, AddressableAssetSettings.kRemoteLoadPath);
-            schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
+            schema.BundleMode = BundledAssetGroupSchemaBase.BundlePackingMode.PackTogether;
             contentGroup.AddSchema<ContentUpdateGroupSchema>().StaticContent = false;
             settings.MoveEntries(items, contentGroup);
         }
@@ -1062,7 +1062,7 @@ namespace UnityEditor.AddressableAssets.Build
                 return false;
             if (!g.HasSchema<ContentUpdateGroupSchema>() || !g.GetSchema<ContentUpdateGroupSchema>().StaticContent)
                 return false;
-            if (!g.HasSchema<BundledAssetGroupSchema>() || !g.GetSchema<BundledAssetGroupSchema>().IncludeInBuild)
+            if (!g.HasSchema<BundledAssetGroupSchemaBase>() || !g.GetSchema<BundledAssetGroupSchemaBase>().IncludeInBuild)
                 return false;
             return true;
         }

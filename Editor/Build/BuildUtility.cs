@@ -50,20 +50,20 @@ namespace UnityEditor.AddressableAssets.Build
         /// <param name="hash">The bundle hash.</param>
         /// <param name="sourceBundleName">The original bundle name.</param>
         /// <returns>Returns the new bundle name.</returns>
-        public static string GetNameWithHashNaming(BundledAssetGroupSchema.BundleNamingStyle schemaBundleNaming, string hash, string sourceBundleName)
+        public static string GetNameWithHashNaming(BundledAssetGroupSchemaBase.BundleNamingStyle schemaBundleNaming, string hash, string sourceBundleName)
         {
             string result = sourceBundleName;
             switch (schemaBundleNaming)
             {
-                case BundledAssetGroupSchema.BundleNamingStyle.AppendHash:
+                case BundledAssetGroupSchemaBase.BundleNamingStyle.AppendHash:
                     result = sourceBundleName.Replace(".bundle", "_" + hash + ".bundle");
                     break;
-                case BundledAssetGroupSchema.BundleNamingStyle.NoHash:
+                case BundledAssetGroupSchemaBase.BundleNamingStyle.NoHash:
                     break;
-                case BundledAssetGroupSchema.BundleNamingStyle.OnlyHash:
+                case BundledAssetGroupSchemaBase.BundleNamingStyle.OnlyHash:
                     result = hash + ".bundle";
                     break;
-                case BundledAssetGroupSchema.BundleNamingStyle.FileNameHash:
+                case BundledAssetGroupSchemaBase.BundleNamingStyle.FileNameHash:
                     result = HashingMethods.Calculate(result) + ".bundle";
                     break;
             }

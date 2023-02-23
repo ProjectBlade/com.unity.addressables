@@ -276,7 +276,7 @@ namespace UnityEditor.AddressableAssets
 
                 numberOfAddressableAssets += group.entries.Count;
 
-                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                var schema = group.GetSchema<BundledAssetGroupSchemaBase>();
                 if (schema == null)
                     continue;
 
@@ -331,26 +331,26 @@ namespace UnityEditor.AddressableAssets
 
                 switch (compressionType)
                 {
-                    case BundledAssetGroupSchema.BundleCompressionMode.Uncompressed:
+                    case BundledAssetGroupSchemaBase.BundleCompressionMode.Uncompressed:
                         numberOfGroupsUncompressed += 1;
                         break;
-                    case BundledAssetGroupSchema.BundleCompressionMode.LZ4:
+                    case BundledAssetGroupSchemaBase.BundleCompressionMode.LZ4:
                         numberOfGroupsUsingLZ4 += 1;
                         break;
-                    case BundledAssetGroupSchema.BundleCompressionMode.LZMA:
+                    case BundledAssetGroupSchemaBase.BundleCompressionMode.LZMA:
                         numberOfGroupsUsingLZMA += 1;
                         break;
                 }
 
                 switch (bundleMode)
                 {
-                    case BundledAssetGroupSchema.BundlePackingMode.PackSeparately:
+                    case BundledAssetGroupSchemaBase.BundlePackingMode.PackSeparately:
                         numberOfGroupsPackedSeparately += 1;
                         break;
-                    case BundledAssetGroupSchema.BundlePackingMode.PackTogether:
+                    case BundledAssetGroupSchemaBase.BundlePackingMode.PackTogether:
                         numberOfGroupsPackedTogether += 1;
                         break;
-                    case BundledAssetGroupSchema.BundlePackingMode.PackTogetherByLabel:
+                    case BundledAssetGroupSchemaBase.BundlePackingMode.PackTogetherByLabel:
                         numberOfGroupsPackedTogetherByLabel += 1;
                         break;
                 }

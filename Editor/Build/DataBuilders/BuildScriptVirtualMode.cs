@@ -175,7 +175,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 if (aaContext.bundleToAssetGroup.TryGetValue(bd.Key as string, out groupGuid))
                     group = aaSettings.FindGroup(g => g.Guid == groupGuid);
 
-                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                var schema = group.GetSchema<BundledAssetGroupSchemaBase>();
                 if (schema != null)
                 {
                     var bundleLocData = aaContext.locations.First(s => s.Keys[0] == bd.Key);
@@ -306,7 +306,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 return errorString;
             }
 
-            var schema = assetGroup.GetSchema<BundledAssetGroupSchema>();
+            var schema = assetGroup.GetSchema<BundledAssetGroupSchemaBase>();
             if (schema == null)
                 return errorString;
 

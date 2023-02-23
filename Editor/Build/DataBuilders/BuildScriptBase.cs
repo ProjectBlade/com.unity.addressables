@@ -153,10 +153,10 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                     continue;
 
                 if (assetGroup.Schemas.Find((x) => x.GetType() == typeof(PlayerDataGroupSchema)) &&
-                    assetGroup.Schemas.Find((x) => x.GetType() == typeof(BundledAssetGroupSchema)))
+                    assetGroup.Schemas.Find((x) => x.GetType() == typeof(BundledAssetGroupSchemaBase)))
                 {
                     EditorUtility.ClearProgressBar();
-                    return $"Addressable group {assetGroup.Name} cannot have both a {typeof(PlayerDataGroupSchema).Name} and a {typeof(BundledAssetGroupSchema).Name}";
+                    return $"Addressable group {assetGroup.Name} cannot have both a {typeof(PlayerDataGroupSchema).Name} and a {typeof(BundledAssetGroupSchemaBase).Name}";
                 }
 
                 EditorUtility.DisplayProgressBar($"Processing Addressable Group", assetGroup.Name, (float)index / aaContext.Settings.groups.Count);

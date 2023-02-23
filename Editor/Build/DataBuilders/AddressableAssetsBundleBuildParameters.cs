@@ -38,8 +38,8 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
             m_bundleToAssetGroup = bundleToAssetGroup;
 
             //If default group has BundledAssetGroupSchema use the compression there otherwise check if the target is webgl or not and try set the compression accordingly
-            if (m_settings.DefaultGroup.HasSchema<BundledAssetGroupSchema>())
-                BundleCompression = ConverBundleCompressiontToBuildCompression(m_settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>().Compression);
+            if (m_settings.DefaultGroup.HasSchema<BundledAssetGroupSchemaBase>())
+                BundleCompression = ConverBundleCompressiontToBuildCompression(m_settings.DefaultGroup.GetSchema<BundledAssetGroupSchemaBase>().Compression);
             else
                 BundleCompression = target == BuildTarget.WebGL ? BuildCompression.LZ4Runtime : BuildCompression.LZMA;
 
@@ -48,17 +48,17 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
         }
 
         private BuildCompression ConverBundleCompressiontToBuildCompression(
-            BundledAssetGroupSchema.BundleCompressionMode compressionMode)
+            BundledAssetGroupSchemaBase.BundleCompressionMode compressionMode)
         {
             BuildCompression compresion = BuildCompression.LZMA;
             switch (compressionMode)
             {
-                case BundledAssetGroupSchema.BundleCompressionMode.LZMA:
+                case BundledAssetGroupSchemaBase.BundleCompressionMode.LZMA:
                     break;
-                case BundledAssetGroupSchema.BundleCompressionMode.LZ4:
+                case BundledAssetGroupSchemaBase.BundleCompressionMode.LZ4:
                     compresion = BuildCompression.LZ4;
                     break;
-                case BundledAssetGroupSchema.BundleCompressionMode.Uncompressed:
+                case BundledAssetGroupSchemaBase.BundleCompressionMode.Uncompressed:
                     compresion = BuildCompression.Uncompressed;
                     break;
             }
@@ -79,7 +79,7 @@ namespace UnityEditor.AddressableAssets.Build.DataBuilders
                 var group = m_settings.FindGroup(g => g != null && g.Guid == groupGuid);
                 if (group != null)
                 {
-                    var abSchema = group.GetSchema<BundledAssetGroupSchema>();
+                    var abSchema = group.GetSchema<BundledAssetGroupSchemaBase>();
                     if (abSchema != null)
                         return abSchema.GetBuildCompressionForBundle(identifier);
                     else

@@ -315,7 +315,7 @@ namespace UnityEditor.AddressableAssets.Build.AnalyzeRules
                     }
                 }
 
-                var schema = group.GetSchema<BundledAssetGroupSchema>();
+                var schema = group.GetSchema<BundledAssetGroupSchemaBase>();
                 if (schema != null && schema.IncludeInBuild)
                 {
                     List<AssetBundleBuild> bundleInputDefinitions = new List<AssetBundleBuild>();

@@ -474,14 +474,14 @@ namespace UnityEditor.AddressableAssets.Settings
                 else
                 {
                     if (isBundled)
-                        return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchema>().GetAssetLoadPath(AssetPath, otherLoadPaths, p => guid);
+                        return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchemaBase>().GetAssetLoadPath(AssetPath, otherLoadPaths, p => guid);
                     return AssetPath;
                 }
             }
             else
             {
                 if (isBundled)
-                    return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchema>().GetAssetLoadPath(AssetPath, otherLoadPaths, p => guid);
+                    return parentGroup.GetSchema<GroupSchemas.BundledAssetGroupSchemaBase>().GetAssetLoadPath(AssetPath, otherLoadPaths, p => guid);
                 var path = AssetPath;
                 int i = path.LastIndexOf(".unity", StringComparison.OrdinalIgnoreCase);
                 if (i > 0)

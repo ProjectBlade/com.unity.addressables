@@ -269,7 +269,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 foreach (BundleEntry bEntry in bundleToEntry.Values)
                 {
                     string assetProvider = GetAssetProviderName(bEntry.Group);
-                    var schema = bEntry.Group.GetSchema<BundledAssetGroupSchema>();
+                    var schema = bEntry.Group.GetSchema<BundledAssetGroupSchemaBase>();
                     foreach (GUID assetGUID in bEntry.Assets)
                     {
                         if (guidToEntry.TryGetValue(assetGUID.ToString(), out AddressableAssetEntry entry))
@@ -310,17 +310,17 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
 
         internal static string GetBundleProviderName(AddressableAssetGroup group)
         {
-            return group.GetSchema<BundledAssetGroupSchema>().GetBundleCachedProviderId();
+            return group.GetSchema<BundledAssetGroupSchemaBase>().GetBundleCachedProviderId();
         }
 
         internal static string GetAssetProviderName(AddressableAssetGroup group)
         {
-            return group.GetSchema<BundledAssetGroupSchema>().GetAssetCachedProviderId();
+            return group.GetSchema<BundledAssetGroupSchemaBase>().GetAssetCachedProviderId();
         }
 
         internal static string GetLoadPath(AddressableAssetGroup group, string name, BuildTarget target)
         {
-            var bagSchema = group.GetSchema<BundledAssetGroupSchema>();
+            var bagSchema = group.GetSchema<BundledAssetGroupSchemaBase>();
             if (bagSchema == null || bagSchema.LoadPath == null)
             {
                 Debug.LogError("Unable to determine load path for " + name + ". Check that your default group is not '" + AddressableAssetSettings.PlayerDataGroupName + "'");

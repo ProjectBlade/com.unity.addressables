@@ -40,7 +40,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
     public static ReturnCode Run(IAddressableAssetsBuildContext aaBuildContext, ContentUpdateContext updateContext)
     {
         var aaContext = aaBuildContext as AddressableAssetsBuildContext;
-        var groups = aaContext.Settings.groups.Where(group => group != null && group.HasSchema<BundledAssetGroupSchema>());
+        var groups = aaContext.Settings.groups.Where(group => group != null && group.HasSchema<BundledAssetGroupSchemaBase>());
         if (updateContext.ContentState.cachedBundles == null)
             UnityEngine.Debug.LogWarning(
                 $"ContentUpdateContext does not contain previous asset bundle info, remote static bundles that are updated will not be cacheable.  If this is needed, rebuild the shipped application state with the current version of addressables to update the addressables_content_state.bin file.  The updated addressables_content_state.bin file can be used to create the content update.");
@@ -123,7 +123,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
 
     internal static List<AssetEntryRevertOperation> DetermineRequiredAssetEntryUpdates(AddressableAssetGroup group, ContentUpdateScript.ContentUpdateContext contentUpdateContext)
     {
-        if (!group.HasSchema<BundledAssetGroupSchema>())
+        if (!group.HasSchema<BundledAssetGroupSchemaBase>())
             return new List<AssetEntryRevertOperation>();
 
         bool groupIsStaticContentGroup = group.HasSchema<ContentUpdateGroupSchema>() && group.GetSchema<ContentUpdateGroupSchema>().StaticContent;
@@ -166,7 +166,7 @@ public class RevertUnchangedAssetsToPreviousAssetState
             if (catalogBundleEntry.InternalId == previousAssetState.bundleFileId)
                 continue;
 
-            var schema = group.GetSchema<BundledAssetGroupSchema>();
+            var schema = group.GetSchema<BundledAssetGroupSchemaBase>();
             string loadPath = schema.LoadPath.GetValue(group.Settings);
             string buildPath = schema.BuildPath.GetValue(group.Settings);
 

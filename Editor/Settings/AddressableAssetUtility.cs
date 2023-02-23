@@ -218,9 +218,9 @@ namespace UnityEditor.AddressableAssets.Settings
 
                 currCount++;
                 var group = settings.CreateGroup(bundle, false, false, false, null);
-                var schema = group.AddSchema<BundledAssetGroupSchema>();
+                var schema = group.AddSchema<BundledAssetGroupSchemaBase>();
                 schema.Validate();
-                schema.BundleMode = BundledAssetGroupSchema.BundlePackingMode.PackTogether;
+                schema.BundleMode = BundledAssetGroupSchemaBase.BundlePackingMode.PackTogether;
                 group.AddSchema<ContentUpdateGroupSchema>().StaticContent = true;
 
                 var assetList = AssetDatabase.GetAssetPathsFromAssetBundle(bundle);

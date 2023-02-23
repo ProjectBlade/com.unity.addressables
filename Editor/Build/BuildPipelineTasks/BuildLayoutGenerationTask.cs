@@ -668,7 +668,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
             BuildLayout layout = new BuildLayout();
             layout.BuildStart = aaContext.buildStartTime;
 
-            layout.LocalCatalogBuildPath = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchema>().BuildPath.GetValue(aaContext.Settings);
+            layout.LocalCatalogBuildPath = aaContext.Settings.DefaultGroup.GetSchema<BundledAssetGroupSchemaBase>().BuildPath.GetValue(aaContext.Settings);
             layout.RemoteCatalogBuildPath = aaContext.Settings.RemoteCatalogBuildPath.GetValue(aaContext.Settings);
 
             AddressableAssetSettings aaSettings = aaContext.Settings;
@@ -711,7 +711,7 @@ namespace UnityEditor.AddressableAssets.Build.BuildPipelineTasks
                 {
                     var sd = GenerateSchemaData(schema, aaSettings);
 
-                    BundledAssetGroupSchema bSchema = schema as BundledAssetGroupSchema;
+                    BundledAssetGroupSchemaBase bSchema = schema as BundledAssetGroupSchemaBase;
                     if (bSchema != null)
                     {
                         for (int i = 0; i < sd.KvpDetails.Count; ++i)
