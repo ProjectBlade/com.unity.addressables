@@ -441,15 +441,17 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 		/// </summary>
 		public abstract string GetBuildPath(AddressableAssetSettings aaSettings);
 		public abstract void SetBuildPath(AddressableAssetSettings aaSettings, string name);
+		public abstract bool BuildPathExists();
 
 		/// <summary>
 		/// The path to load bundles from.
 		/// </summary>
 		public abstract string GetLoadPath(AddressableAssetSettings aaSettings);
 		public abstract void SetLoadPath(AddressableAssetSettings aaSettings, string name);
+		public abstract bool LoadPathExists();
 
 		//placeholder for UrlSuffix support...
-		internal string UrlSuffix => string.Empty;
+		internal virtual string UrlSuffix => string.Empty;
 
 		[FormerlySerializedAs("m_bundleMode")]
 		[SerializeField]
@@ -492,7 +494,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 		/// <summary>
 		/// Internal settings
 		/// </summary>
-		internal AddressableAssetSettings settings => AddressableAssetSettingsDefaultObject.Settings;
+		internal virtual AddressableAssetSettings settings => AddressableAssetSettingsDefaultObject.Settings;
 
 		protected GUIContent m_BuildAndLoadPathsGUIContent = new("Build & Load Paths", "Paths to build or load AssetBundles from");
 		protected GUIContent m_PathsPreviewGUIContent = new("Path Preview", "Preview of what the current paths will be evaluated to");
@@ -521,10 +523,45 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
+		internal virtual string GetAssetLoadPath(string assetPath, HashSet<string> otherLoadPaths, Func<string, string> pathToGUIDFunc) => InternalIdNamingMode switch {
+
+			AssetNamingMode.FullPath => assetPath,
+			AssetNamingMode.Filename => assetPath.EndsWith(".unity", StringComparison.OrdinalIgnoreCase) ?
+																			System.IO.Path.GetFileNameWithoutExtension(assetPath) :
+																			System.IO.Path.GetFileName(assetPath),
+			AssetNamingMode.GUID => pathToGUIDFunc(assetPath),
+			AssetNamingMode.Dynamic => ((Func<string>) (() => {
+
+				string g = pathToGUIDFunc(assetPath);
+
+				if(otherLoadPaths == null) {
+
+					return g;
+
+				}
+
+				int len = 1;
+				string p = g[..len];
+
+				while(otherLoadPaths.Contains(p)) {
+
+					p = g[..++len];
+
+				}
+
+				otherLoadPaths.Add(p);
+
+				return p;
+
+			}))(),
+			_ => assetPath,
+
+		};
+
 		/// <summary>
 		/// Impementation of ISerializationCallbackReceiver, does nothing.
 		/// </summary>
-		public void OnBeforeSerialize() { }
+		public virtual void OnBeforeSerialize() { }
 
 		/// <summary>
 		/// Impementation of ISerializationCallbackReceiver, used to set callbacks for ProfileValueReference changes.
@@ -549,13 +586,13 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 		/// Returns the id of the asset provider needed to load from this group.
 		/// </summary>
 		/// <returns>The id of the cached provider needed for this group.</returns>
-		public string GetAssetCachedProviderId() => ForceUniqueProvider ? string.Format("{0}_{1}", BundledAssetProviderType.Value.FullName, Group.Guid) : BundledAssetProviderType.Value.FullName;
+		public virtual string GetAssetCachedProviderId() => ForceUniqueProvider ? string.Format("{0}_{1}", BundledAssetProviderType.Value.FullName, Group.Guid) : BundledAssetProviderType.Value.FullName;
 
 		/// <summary>
 		/// Returns the id of the bundle provider needed to load from this group.
 		/// </summary>
 		/// <returns>The id of the cached provider needed for this group.</returns>
-		public string GetBundleCachedProviderId() => ForceUniqueProvider ? string.Format("{0}_{1}", AssetBundleProviderType.Value.FullName, Group.Guid) : AssetBundleProviderType.Value.FullName;
+		public virtual string GetBundleCachedProviderId() => ForceUniqueProvider ? string.Format("{0}_{1}", AssetBundleProviderType.Value.FullName, Group.Guid) : AssetBundleProviderType.Value.FullName;
 
 		/// <summary>
 		/// Used to determine how the final bundle name should look.
@@ -618,6 +655,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 				EditorGUI.EndProperty();
 				return newValue;
 			}
+
 		}
 
 		[SerializeField]
@@ -668,7 +706,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 		/// <inheritdoc/>
 		public override void OnGUI() {
 
-			ShowSelectedPropertyPathPair(SchemaSerializedObject);
+			ShowSelectedPropertyPathPair();
 
 			AdvancedOptionsFoldout.IsActive = GUI.AddressablesGUIUtility.FoldoutWithHelp(AdvancedOptionsFoldout.IsActive, new GUIContent("Advanced Options"), () => {
 
@@ -680,7 +718,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			if(AdvancedOptionsFoldout.IsActive) {
 
-				ShowAdvancedProperties(SchemaSerializedObject);
+				ShowAdvancedProperties();
 
 			}
 
@@ -713,7 +751,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			if(AdvancedOptionsFoldout.IsActive) {
 
-				ShowAdvancedPropertiesMulti(SchemaSerializedObject, otherSchemas, ref queuedChanges);
+				ShowAdvancedPropertiesMulti(otherSchemas, ref queuedChanges);
 
 			}
 
@@ -747,10 +785,6 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected abstract void ShowPaths(SerializedObject so);
-
-		protected abstract void ShowPathsMulti(SerializedObject so, List<AddressableAssetGroupSchema> otherBundledSchemas, ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges);
-
 		internal static GUI.FoldoutSessionStateValue AdvancedOptionsFoldout = new("Addressables.BundledAssetGroup.AdvancedOptions");
 
 		protected GUIContent m_CompressionContent = new("Asset Bundle Compression", "Compression method to use for asset bundles.");
@@ -759,11 +793,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 		protected GUIContent m_UseAssetBundleCacheContent = new("Use Asset Bundle Cache", "If enabled and supported, the device will cache  asset bundles.");
 		protected GUIContent m_AssetBundleCrcContent = new("Asset Bundle CRC", "Defines which Asset Bundles will have their CRC checked when loading to ensure correct content.");
 
-		protected GUIContent[] m_CrcPopupContent = new[]
-		{
-			new GUIContent("Disabled", "Bundles will not have their CRC checked when loading."),
-			new GUIContent("Enabled, Including Cached", "All Bundles will have their CRC checked when loading."),
-			new GUIContent("Enabled, Excluding Cached", "Bundles that have already been downloaded and cached will not have their CRC check when loading, otherwise CRC check will be performed.")
+		protected GUIContent[] m_CrcPopupContent = new GUIContent[] {
+
+			new("Disabled", "Bundles will not have their CRC checked when loading."),
+			new("Enabled, Including Cached", "All Bundles will have their CRC checked when loading."),
+			new("Enabled, Excluding Cached", "Bundles that have already been downloaded and cached will not have their CRC check when loading, otherwise CRC check will be performed.")
+
 		};
 
 		protected GUIContent m_UseUWRForLocalBundlesContent = new("Use UnityWebRequest for Local Asset Bundles", "If enabled, local asset bundles will load through UnityWebRequest.");
@@ -800,12 +835,17 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 		protected GUIContent m_AssetProviderContent = new("Asset Provider", "The provider to use for loading assets out of AssetBundles");
 		protected GUIContent m_BundleProviderContent = new("Asset Bundle Provider", "The provider to use for loading AssetBundles (not the assets within bundles)");
 
-		protected void ShowAdvancedProperties(SerializedObject so) {
+		protected virtual void ShowAdvancedProperties() {
+
+			SerializedObject so = SchemaSerializedObject;
+
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_Compression)), m_CompressionContent, true);
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_IncludeInBuild)), m_IncludeInBuildContent, true);
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_ForceUniqueProvider)), m_ForceUniqueProviderContent, true);
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_UseAssetBundleCache)), m_UseAssetBundleCacheContent, true);
-			CRCPropertyPopupField(so);
+
+			CRCPropertyPopupField();
+
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_UseUWRForLocalBundles)), m_UseUWRForLocalBundlesContent, true);
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_Timeout)), m_TimeoutContent, true);
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_ChunkedTransfer)), m_ChunkedTransferContent, true);
@@ -822,85 +862,190 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_AssetLoadMode)), m_AssetLoadModeContent, true);
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_BundledAssetProviderType)), m_AssetProviderContent, true);
 			EditorGUILayout.PropertyField(so.FindProperty(nameof(m_AssetBundleProviderType)), m_BundleProviderContent, true);
+
 		}
 
-		protected void CRCPropertyPopupField(SerializedObject so) {
+		protected virtual void CRCPropertyPopupField() {
+
 			int enumIndex = 0;
-			if(m_UseAssetBundleCrc)
+
+			if(m_UseAssetBundleCrc) {
+
 				enumIndex = m_UseAssetBundleCrcForCachedBundles ? 1 : 2;
 
-			int newEnumIndex = EditorGUILayout.Popup(m_AssetBundleCrcContent, enumIndex, m_CrcPopupContent);
-			if(enumIndex != newEnumIndex) {
-				if(newEnumIndex != 0) {
-					if(!m_UseAssetBundleCrc)
-						so.FindProperty("m_UseAssetBundleCrc").boolValue = true;
-					if(newEnumIndex == 1 && !m_UseAssetBundleCrcForCachedBundles)
-						so.FindProperty("m_UseAssetBundleCrcForCachedBundles").boolValue = true;
-					else if(newEnumIndex == 2 && m_UseAssetBundleCrcForCachedBundles)
-						so.FindProperty("m_UseAssetBundleCrcForCachedBundles").boolValue = false;
-				}
-				else
-					so.FindProperty("m_UseAssetBundleCrc").boolValue = false;
 			}
-		}
 
-		protected void ShowAdvancedPropertiesMulti(SerializedObject so,
-													List<AddressableAssetGroupSchema> otherBundledSchemas,
-													ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges) {
+			int newEnumIndex = EditorGUILayout.Popup(m_AssetBundleCrcContent, enumIndex, m_CrcPopupContent);
 
-			ShowSelectedPropertyMulti(so, nameof(m_Compression), m_CompressionContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.Compression = src.Compression, ref m_Compression);
-			ShowSelectedPropertyMulti(so, nameof(m_IncludeInBuild), m_IncludeInBuildContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.IncludeInBuild = src.IncludeInBuild,
-				ref m_IncludeInBuild);
-			ShowSelectedPropertyMulti(so, nameof(m_ForceUniqueProvider), m_ForceUniqueProviderContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => dst.ForceUniqueProvider = src.ForceUniqueProvider, ref m_ForceUniqueProvider);
-			ShowSelectedPropertyMulti(so, nameof(m_UseAssetBundleCache), m_UseAssetBundleCacheContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => dst.UseAssetBundleCache = src.UseAssetBundleCache, ref m_UseAssetBundleCache);
-			ShowCustomGuiSelectedPropertyMulti(so, new string[] { nameof(m_UseAssetBundleCrc), nameof(m_UseAssetBundleCrcForCachedBundles) }, m_AssetBundleCrcContent, otherBundledSchemas,
-				ref queuedChanges,
-				schema => CRCPropertyPopupField(so), (src, dst) => {
-					dst.UseAssetBundleCrc = src.UseAssetBundleCrc;
-					dst.UseAssetBundleCrcForCachedBundles = src.UseAssetBundleCrcForCachedBundles;
-				});
-			ShowSelectedPropertyMulti(so, nameof(m_UseUWRForLocalBundles), m_UseUWRForLocalBundlesContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => dst.UseUnityWebRequestForLocalBundles = src.UseUnityWebRequestForLocalBundles, ref m_UseUWRForLocalBundles);
-			ShowSelectedPropertyMulti(so, nameof(m_Timeout), m_TimeoutContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.Timeout = src.Timeout, ref m_Timeout);
-			ShowSelectedPropertyMulti(so, nameof(m_ChunkedTransfer), m_ChunkedTransferContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.ChunkedTransfer = src.ChunkedTransfer,
-				ref m_ChunkedTransfer);
-			ShowSelectedPropertyMulti(so, nameof(m_RedirectLimit), m_RedirectLimitContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.RedirectLimit = src.RedirectLimit,
-				ref m_RedirectLimit);
-			ShowSelectedPropertyMulti(so, nameof(m_RetryCount), m_RetryCountContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.RetryCount = src.RetryCount, ref m_RetryCount);
-			ShowSelectedPropertyMulti(so, nameof(m_IncludeAddressInCatalog), m_IncludeAddressInCatalogContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => dst.IncludeAddressInCatalog = src.IncludeAddressInCatalog, ref m_IncludeAddressInCatalog);
-			ShowSelectedPropertyMulti(so, nameof(m_IncludeGUIDInCatalog), m_IncludeGUIDInCatalogContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => dst.IncludeGUIDInCatalog = src.IncludeGUIDInCatalog, ref m_IncludeGUIDInCatalog);
-			ShowSelectedPropertyMulti(so, nameof(m_IncludeLabelsInCatalog), m_IncludeLabelsInCatalogContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => dst.IncludeLabelsInCatalog = src.IncludeLabelsInCatalog, ref m_IncludeLabelsInCatalog);
-			ShowSelectedPropertyMulti(so, nameof(m_InternalIdNamingMode), m_InternalIdNamingModeContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => dst.InternalIdNamingMode = src.InternalIdNamingMode, ref m_InternalIdNamingMode);
-			ShowSelectedPropertyMulti(so, nameof(m_InternalBundleIdMode), m_InternalBundleIdModeContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => dst.InternalBundleIdMode = src.InternalBundleIdMode, ref m_InternalBundleIdMode);
-			ShowSelectedPropertyMulti(so, nameof(m_CacheClearBehavior), m_CacheClearBehaviorContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => { dst.AssetBundledCacheClearBehavior = src.AssetBundledCacheClearBehavior; }, ref m_CacheClearBehavior);
-			ShowSelectedPropertyMulti(so, nameof(m_BundleMode), m_BundleModeContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.BundleMode = src.BundleMode, ref m_BundleMode);
-			ShowSelectedPropertyMulti(so, nameof(m_BundleNaming), m_BundleNamingContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.BundleNaming = src.BundleNaming, ref m_BundleNaming);
-			ShowSelectedPropertyMulti(so, nameof(m_AssetLoadMode), m_AssetLoadModeContent, otherBundledSchemas, ref queuedChanges, (src, dst) => dst.AssetLoadMode = src.AssetLoadMode,
-				ref m_AssetLoadMode);
-			ShowSelectedPropertyMulti(so, nameof(m_BundledAssetProviderType), m_AssetProviderContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => { dst.BundledAssetProviderType = src.BundledAssetProviderType; }, ref m_BundledAssetProviderType);
-			ShowSelectedPropertyMulti(so, nameof(m_AssetBundleProviderType), m_BundleProviderContent, otherBundledSchemas, ref queuedChanges,
-				(src, dst) => { dst.AssetBundleProviderType = src.AssetBundleProviderType; }, ref m_AssetBundleProviderType);
+			if(enumIndex != newEnumIndex) {
+
+				if(newEnumIndex != 0) {
+
+					if(!m_UseAssetBundleCrc) {
+
+						SchemaSerializedObject.FindProperty("m_UseAssetBundleCrc").boolValue = true;
+
+					}
+
+					if(newEnumIndex == 1 && !m_UseAssetBundleCrcForCachedBundles) {
+
+						SchemaSerializedObject.FindProperty("m_UseAssetBundleCrcForCachedBundles").boolValue = true;
+
+					}
+
+					else if(newEnumIndex == 2 && m_UseAssetBundleCrcForCachedBundles) {
+
+						SchemaSerializedObject.FindProperty("m_UseAssetBundleCrcForCachedBundles").boolValue = false;
+
+					}
+
+				}
+
+				else {
+
+					SchemaSerializedObject.FindProperty("m_UseAssetBundleCrc").boolValue = false;
+
+				}
+
+			}
 
 		}
 
-		protected void ShowSelectedPropertyMulti<T>(SerializedObject so,
-													string propertyName,
-													GUIContent label,
-													List<AddressableAssetGroupSchema> otherSchemas,
-													ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges,
-													Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase> a,
-													ref T propertyValue) {
+		protected virtual void ShowAdvancedPropertiesMulti(List<AddressableAssetGroupSchema> otherBundledSchemas,
+															ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges) {
 
-			SerializedProperty serializedProperty = so.FindProperty(propertyName);
+			ShowSelectedPropertyMulti(nameof(m_Compression),
+										m_CompressionContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.Compression = src.Compression,
+										ref m_Compression);
+			ShowSelectedPropertyMulti(nameof(m_IncludeInBuild),
+										m_IncludeInBuildContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.IncludeInBuild = src.IncludeInBuild,
+										ref m_IncludeInBuild);
+			ShowSelectedPropertyMulti(nameof(m_ForceUniqueProvider),
+										m_ForceUniqueProviderContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.ForceUniqueProvider = src.ForceUniqueProvider,
+										ref m_ForceUniqueProvider);
+			ShowSelectedPropertyMulti(nameof(m_UseAssetBundleCache),
+										m_UseAssetBundleCacheContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.UseAssetBundleCache = src.UseAssetBundleCache,
+										ref m_UseAssetBundleCache);
+			ShowCustomGuiSelectedPropertyMulti(new string[] { nameof(m_UseAssetBundleCrc), nameof(m_UseAssetBundleCrcForCachedBundles) },
+												m_AssetBundleCrcContent,
+												otherBundledSchemas,
+												ref queuedChanges,
+												schema => CRCPropertyPopupField(),
+												(src, dst) => {
+
+													dst.UseAssetBundleCrc = src.UseAssetBundleCrc;
+													dst.UseAssetBundleCrcForCachedBundles = src.UseAssetBundleCrcForCachedBundles;
+
+												});
+			ShowSelectedPropertyMulti(nameof(m_UseUWRForLocalBundles),
+										m_UseUWRForLocalBundlesContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.UseUnityWebRequestForLocalBundles = src.UseUnityWebRequestForLocalBundles,
+										ref m_UseUWRForLocalBundles);
+			ShowSelectedPropertyMulti(nameof(m_Timeout),
+										m_TimeoutContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.Timeout = src.Timeout,
+										ref m_Timeout);
+			ShowSelectedPropertyMulti(nameof(m_ChunkedTransfer),
+										m_ChunkedTransferContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.ChunkedTransfer = src.ChunkedTransfer,
+										ref m_ChunkedTransfer);
+			ShowSelectedPropertyMulti(nameof(m_RedirectLimit),
+										m_RedirectLimitContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.RedirectLimit = src.RedirectLimit,
+										ref m_RedirectLimit);
+			ShowSelectedPropertyMulti(nameof(m_RetryCount),
+										m_RetryCountContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.RetryCount = src.RetryCount,
+										ref m_RetryCount);
+			ShowSelectedPropertyMulti(nameof(m_IncludeAddressInCatalog),
+										m_IncludeAddressInCatalogContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.IncludeAddressInCatalog = src.IncludeAddressInCatalog,
+										ref m_IncludeAddressInCatalog);
+			ShowSelectedPropertyMulti(nameof(m_IncludeGUIDInCatalog),
+										m_IncludeGUIDInCatalogContent,
+										otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.IncludeGUIDInCatalog = src.IncludeGUIDInCatalog,
+										ref m_IncludeGUIDInCatalog);
+			ShowSelectedPropertyMulti(nameof(m_IncludeLabelsInCatalog),
+										m_IncludeLabelsInCatalogContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.IncludeLabelsInCatalog = src.IncludeLabelsInCatalog,
+										ref m_IncludeLabelsInCatalog);
+			ShowSelectedPropertyMulti(nameof(m_InternalIdNamingMode),
+										m_InternalIdNamingModeContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.InternalIdNamingMode = src.InternalIdNamingMode,
+										ref m_InternalIdNamingMode);
+			ShowSelectedPropertyMulti(nameof(m_InternalBundleIdMode),
+										m_InternalBundleIdModeContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.InternalBundleIdMode = src.InternalBundleIdMode,
+										ref m_InternalBundleIdMode);
+			ShowSelectedPropertyMulti(nameof(m_CacheClearBehavior),
+										m_CacheClearBehaviorContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.AssetBundledCacheClearBehavior = src.AssetBundledCacheClearBehavior,
+										ref m_CacheClearBehavior);
+			ShowSelectedPropertyMulti(nameof(m_BundleMode),
+										m_BundleModeContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.BundleMode = src.BundleMode,
+										ref m_BundleMode);
+			ShowSelectedPropertyMulti(nameof(m_BundleNaming),
+										m_BundleNamingContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.BundleNaming = src.BundleNaming,
+										ref m_BundleNaming);
+			ShowSelectedPropertyMulti(nameof(m_AssetLoadMode),
+										m_AssetLoadModeContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.AssetLoadMode = src.AssetLoadMode,
+										ref m_AssetLoadMode);
+			ShowSelectedPropertyMulti(nameof(m_BundledAssetProviderType),
+										m_AssetProviderContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.BundledAssetProviderType = src.BundledAssetProviderType,
+										ref m_BundledAssetProviderType);
+			ShowSelectedPropertyMulti(nameof(m_AssetBundleProviderType),
+										m_BundleProviderContent, otherBundledSchemas,
+										ref queuedChanges,
+										(src, dst) => dst.AssetBundleProviderType = src.AssetBundleProviderType,
+										ref m_AssetBundleProviderType);
+
+		}
+
+		protected virtual void ShowSelectedPropertyMulti<T>(string propertyName,
+															GUIContent label,
+															List<AddressableAssetGroupSchema> otherSchemas,
+															ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges,
+															Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase> a,
+															ref T propertyValue) {
+
+			SerializedProperty serializedProperty = SchemaSerializedObject.FindProperty(propertyName);
 
 			Type propertySystemType = typeof(T);
 
@@ -958,7 +1103,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 				EditorGUILayout.PropertyField(serializedProperty, label, true);
 
-				so.ApplyModifiedProperties();
+				SchemaSerializedObject.ApplyModifiedProperties();
 
 			}
 
@@ -1027,14 +1172,13 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected void ShowCustomGuiSelectedPropertyMulti(SerializedObject so,
-															string[] propertyNames,
-															GUIContent label,
-															List<AddressableAssetGroupSchema> otherSchemas,
-															ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges,
-															Action<BundledAssetGroupSchemaBase> guiAction,
-															Action<BundledAssetGroupSchemaBase,
-															BundledAssetGroupSchemaBase> a) {
+		protected virtual void ShowCustomGuiSelectedPropertyMulti(string[] propertyNames,
+																	GUIContent label,
+																	List<AddressableAssetGroupSchema> otherSchemas,
+																	ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges,
+																	Action<BundledAssetGroupSchemaBase> guiAction,
+																	Action<BundledAssetGroupSchemaBase,
+																	BundledAssetGroupSchemaBase> a) {
 			if(label == null) {
 
 				return;
@@ -1045,7 +1189,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			for(int i = 0; i < propertyNames.Length; ++i) {
 
-				props[i] = so.FindProperty(propertyNames[i]);
+				props[i] = SchemaSerializedObject.FindProperty(propertyNames[i]);
 
 			}
 
@@ -1079,16 +1223,15 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected void ShowSelectedPropertyMulti(SerializedObject so,
-													string propertyName,
-													GUIContent label,
-													List<AddressableAssetGroupSchema> otherSchemas,
-													ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges,
-													Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase> a,
-													string previousValue,
-													ref ProfileValueReference currentValue) {
+		protected virtual void ShowSelectedPropertyMulti(string propertyName,
+															GUIContent label,
+															List<AddressableAssetGroupSchema> otherSchemas,
+															ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges,
+															Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase> a,
+															string previousValue,
+															ref ProfileValueReference currentValue) {
 
-			SerializedProperty prop = so.FindProperty(propertyName);
+			SerializedProperty prop = SchemaSerializedObject.FindProperty(propertyName);
 
 			ShowMixedValue(prop, otherSchemas, typeof(ProfileValueReference), propertyName);
 
@@ -1100,7 +1243,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 				string newValue = currentValue.Id;
 				currentValue.Id = previousValue;
 
-				Undo.RecordObject(so.targetObject, so.targetObject.name + propertyName);
+				Undo.RecordObject(SchemaSerializedObject.targetObject, SchemaSerializedObject.targetObject.name + propertyName);
 
 				currentValue.Id = newValue;
 				queuedChanges ??= new();
@@ -1112,12 +1255,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected void ShowSelectedPropertyPath(SerializedObject so,
-												string propertyName,
-												GUIContent label,
-												ref ProfileValueReference currentValue) {
+		protected virtual void ShowSelectedPropertyPath(string propertyName,
+														GUIContent label,
+														ref ProfileValueReference currentValue) {
 
-			SerializedProperty prop = so.FindProperty(propertyName);
+			SerializedProperty prop = SchemaSerializedObject.FindProperty(propertyName);
 
 			string previousValue = currentValue.Id;
 
@@ -1130,7 +1272,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 				string newValue = currentValue.Id;
 				currentValue.Id = previousValue;
 
-				Undo.RecordObject(so.targetObject, so.targetObject.name + propertyName);
+				Undo.RecordObject(SchemaSerializedObject.targetObject, SchemaSerializedObject.targetObject.name + propertyName);
 
 				currentValue.Id = newValue;
 
@@ -1142,22 +1284,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected abstract void ShowSelectedPropertyPathPair(SerializedObject so);
-
-		internal int DetermineSelectedIndex(List<ProfileGroupType> groupTypes, int defaultValue, AddressableAssetSettings addressableAssetSettings) {
-
-			HashSet<string> vars = addressableAssetSettings.profileSettings.GetAllVariableIds();
-
-			return DetermineSelectedIndex(groupTypes, defaultValue, addressableAssetSettings, vars);
-
-		}
+		protected abstract void ShowSelectedPropertyPathPair();
 
 		internal abstract int DetermineSelectedIndex(List<ProfileGroupType> groupTypes,
-											int defaultValue,
-											AddressableAssetSettings addressableAssetSettings,
-											HashSet<string> vars);
-
-		protected abstract void ShowPathsPreview(bool showMixedValue);
+														int defaultValue,
+														AddressableAssetSettings addressableAssetSettings,
+														HashSet<string> vars);
 
 	}
 

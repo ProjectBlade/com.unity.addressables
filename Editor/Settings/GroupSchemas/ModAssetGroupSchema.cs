@@ -1,3 +1,5 @@
+using ProjectBlade.Core.Runtime.Modding;
+
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -13,31 +15,28 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 	[DisplayName("Mod Content Packing & Loading")]
 	public class ModAssetGroupSchema : BundledAssetGroupSchemaBase, IHostingServiceConfigurationProvider, ISerializationCallbackReceiver {
 
+		public ModBase mod;
+
 		protected virtual string BuildPath => GetBuildPath(null);
 		protected virtual string LoadPath => GetLoadPath(null);
 
-		public override string GetBuildPath(AddressableAssetSettings aaSettings) => throw new NotImplementedException();
-
+		public override string GetBuildPath(AddressableAssetSettings aaSettings) => $"Build/{(mod == null ? "unassigned-assets" : mod.Id)}/Content";
 		public override void SetBuildPath(AddressableAssetSettings aaSettings, string name) => throw new NotImplementedException();
+		public override bool BuildPathExists() => true;
 
-		public override string GetLoadPath(AddressableAssetSettings aaSettings) => throw new NotImplementedException();
-
+		public override string GetLoadPath(AddressableAssetSettings aaSettings) => mod == null ? null : $"Mods/{mod.Id}/Content";
 		public override void SetLoadPath(AddressableAssetSettings aaSettings, string name) => throw new NotImplementedException();
+		public override bool LoadPathExists() => true;
 
-		protected override void ShowPaths(SerializedObject so) {
+		public override void OnGUI() {
 
-			EditorGUILayout.LabelField("Build Path:", BuildPath);
-			EditorGUILayout.LabelField("Load Path:", LoadPath);
+			EditorGUILayout.PropertyField(SchemaSerializedObject.FindProperty("mod"));
+
+			base.OnGUI();
 
 		}
 
-		protected override void ShowPathsMulti(SerializedObject so, List<AddressableAssetGroupSchema> otherBundledSchemas, ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges) { }
-
-		protected override void ShowSelectedPropertyPathPair(SerializedObject so) { }
-
-		internal override int DetermineSelectedIndex(List<ProfileGroupType> groupTypes, int defaultValue, AddressableAssetSettings addressableAssetSettings, HashSet<string> vars) => defaultValue;
-
-		protected override void ShowPathsPreview(bool showMixedValue) {
+		protected override void ShowSelectedPropertyPathPair() {
 
 			EditorGUI.indentLevel++;
 
@@ -55,6 +54,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 			EditorGUI.indentLevel--;
 
 		}
+
+		internal override int DetermineSelectedIndex(List<ProfileGroupType> groupTypes,
+														int defaultValue,
+														AddressableAssetSettings addressableAssetSettings,
+														HashSet<string> vars) => defaultValue;
 
 	}
 

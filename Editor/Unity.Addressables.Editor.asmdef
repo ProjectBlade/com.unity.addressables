@@ -1,12 +1,14 @@
 {
     "name": "Unity.Addressables.Editor",
+    "rootNamespace": "",
     "references": [
         "Unity.Addressables",
         "Unity.ResourceManager",
         "Unity.ScriptableBuildPipeline.Editor",
         "Unity.ScriptableBuildPipeline",
         "Unity.Services.Core",
-        "Unity.Services.Ccd.Management"
+        "Unity.Services.Ccd.Management",
+        "ProjectBlade.Core.Runtime"
     ],
     "includePlatforms": [
         "Editor"

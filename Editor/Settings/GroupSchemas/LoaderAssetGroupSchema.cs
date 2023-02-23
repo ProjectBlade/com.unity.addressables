@@ -25,12 +25,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 		protected ProfileValueReference m_LoadPath = new();
 
 		public override string GetBuildPath(AddressableAssetSettings aaSettings) => m_BuildPath?.GetValue(aaSettings);
-
 		public override void SetBuildPath(AddressableAssetSettings aaSettings, string name) => m_BuildPath?.SetVariableByName(aaSettings, name);
+		public override bool BuildPathExists() => m_BuildPath != null;
 
 		public override string GetLoadPath(AddressableAssetSettings aaSettings) => m_LoadPath?.GetValue(aaSettings);
-
 		public override void SetLoadPath(AddressableAssetSettings aaSettings, string name) => m_LoadPath?.SetVariableByName(aaSettings, name);
+		public override bool LoadPathExists() => m_LoadPath != null;
 
 		/// <summary>
 		/// Used to determine if dropdown should be custom
@@ -105,18 +105,17 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected override void ShowPaths(SerializedObject so) {
+		protected virtual void ShowPaths() {
 
-			ShowSelectedPropertyPath(so, nameof(m_BuildPath), null, ref m_BuildPath);
-			ShowSelectedPropertyPath(so, nameof(m_LoadPath), null, ref m_LoadPath);
+			ShowSelectedPropertyPath(nameof(m_BuildPath), null, ref m_BuildPath);
+			ShowSelectedPropertyPath(nameof(m_LoadPath), null, ref m_LoadPath);
 
 		}
 
-		protected override void ShowPathsMulti(SerializedObject so,
-												List<AddressableAssetGroupSchema> otherBundledSchemas,
+		protected virtual void ShowPathsMulti(List<AddressableAssetGroupSchema> otherBundledSchemas,
 												ref List<Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase>> queuedChanges) {
 
-			ShowSelectedPropertyMulti(so, nameof(m_BuildPath), null, otherBundledSchemas, ref queuedChanges, (src, dst) => {
+			ShowSelectedPropertyMulti(nameof(m_BuildPath), null, otherBundledSchemas, ref queuedChanges, (src, dst) => {
 
 				if(src is not LoaderAssetGroupSchema || dst is not LoaderAssetGroupSchema) {
 
@@ -130,7 +129,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			}, m_BuildPath.Id, ref m_BuildPath);
 
-			ShowSelectedPropertyMulti(so, nameof(m_LoadPath), null, otherBundledSchemas, ref queuedChanges, (src, dst) => {
+			ShowSelectedPropertyMulti(nameof(m_LoadPath), null, otherBundledSchemas, ref queuedChanges, (src, dst) => {
 
 				(dst as LoaderAssetGroupSchema).m_LoadPath.Id = (src as LoaderAssetGroupSchema).m_LoadPath.Id;
 
@@ -140,7 +139,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected override void ShowSelectedPropertyPathPair(SerializedObject so) {
+		protected override void ShowSelectedPropertyPathPair() {
 
 			List<ProfileGroupType> groupTypes = ProfileGroupType.CreateGroupTypes(settings.profileSettings.GetProfile(settings.activeProfileId), settings);
 
@@ -150,7 +149,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			//Determine selection and whether to show custom
 
-			int? selected = DetermineSelectedIndex(groupTypes, options.Count - 1, settings);
+			int? selected = DetermineSelectedIndex(groupTypes, options.Count - 1, settings, settings.profileSettings.GetAllVariableIds());
 
 			m_UseCustomPaths = !selected.HasValue || selected == options.Count - 1;
 
@@ -161,7 +160,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			if(EditorGUI.EndChangeCheck() && newIndex != selected) {
 
-				SetPathPairOption(so, options, groupTypes, newIndex);
+				SetPathPairOption(options, groupTypes, newIndex);
 
 				EditorUtility.SetDirty(this);
 
@@ -169,7 +168,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			if(m_UseCustomPaths) {
 
-				ShowPaths(so);
+				ShowPaths();
 
 			}
 
@@ -215,11 +214,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected virtual void SetPathPairOption(SerializedObject so, List<string> options, List<ProfileGroupType> groupTypes, int newIndex) {
+		protected virtual void SetPathPairOption(List<string> options, List<ProfileGroupType> groupTypes, int newIndex) {
 
 			if(options[newIndex] != AddressableAssetProfileSettings.customEntryString) {
 
-				Undo.RecordObject(so.targetObject, so.targetObject.name + "Path Pair");
+				Undo.RecordObject(SchemaSerializedObject.targetObject, SchemaSerializedObject.targetObject.name + "Path Pair");
 
 				m_BuildPath.SetVariableByName(settings, groupTypes[newIndex].GroupTypePrefix + ProfileGroupType.k_PrefixSeparator + "BuildPath");
 				m_LoadPath.SetVariableByName(settings, groupTypes[newIndex].GroupTypePrefix + ProfileGroupType.k_PrefixSeparator + "LoadPath");
@@ -230,7 +229,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			else {
 
-				Undo.RecordObject(so.targetObject, so.targetObject.name + "Path Pair");
+				Undo.RecordObject(SchemaSerializedObject.targetObject, SchemaSerializedObject.targetObject.name + "Path Pair");
 
 				m_UseCustomPaths = true;
 
@@ -238,7 +237,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		protected override void ShowPathsPreview(bool showMixedValue) {
+		protected virtual void ShowPathsPreview(bool showMixedValue) {
 
 			EditorGUI.indentLevel++;
 
