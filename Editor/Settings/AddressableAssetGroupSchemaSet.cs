@@ -161,7 +161,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 			}
 
 			foreach(var s in m_Schemas)
-				if(type == s.GetType())
+				if(type.IsAssignableFrom(s.GetType()))
 					return s;
 			return null;
 		}

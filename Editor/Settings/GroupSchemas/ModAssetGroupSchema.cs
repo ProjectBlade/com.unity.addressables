@@ -20,7 +20,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 		protected virtual string BuildPath => GetBuildPath(null);
 		protected virtual string LoadPath => GetLoadPath(null);
 
-		public override string GetBuildPath(AddressableAssetSettings aaSettings) => $"Build/{(mod == null ? "unassigned-assets" : mod.Id)}/Content";
+		public override string GetBuildPath(AddressableAssetSettings aaSettings) => $"Build/Mods/{(mod == null ? "unassigned-assets" : mod.Id)}/Content";
 		public override void SetBuildPath(AddressableAssetSettings aaSettings, string name) => throw new NotImplementedException();
 		public override bool BuildPathExists() => true;
 
