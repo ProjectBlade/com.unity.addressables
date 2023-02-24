@@ -733,7 +733,7 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			List<BundledAssetGroupSchemaBase> otherBundledSchemas = otherSchemas.Where(schema => schema.GetType() == GetType()).Cast<BundledAssetGroupSchemaBase>().ToList();
 
-			foreach(var schema in otherBundledSchemas) {
+			foreach(BundledAssetGroupSchemaBase schema in otherBundledSchemas) {
 
 				schema.m_ShowPaths = m_ShowPaths;
 
@@ -763,15 +763,15 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 				Undo.SetCurrentGroupName("bundledAssetGroupSchemasUndos");
 
-				foreach(var schema in otherBundledSchemas) {
+				foreach(BundledAssetGroupSchemaBase schema in otherBundledSchemas) {
 
 					Undo.RecordObject(schema, "BundledAssetGroupSchema" + schema.name);
 
 				}
 
-				foreach(var change in queuedChanges) {
+				foreach(Action<BundledAssetGroupSchemaBase, BundledAssetGroupSchemaBase> change in queuedChanges) {
 
-					foreach(var schema in otherBundledSchemas) {
+					foreach(BundledAssetGroupSchemaBase schema in otherBundledSchemas) {
 
 						change.Invoke(this, schema);
 
