@@ -42,7 +42,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 		/// <param name="schema">The schema to copy.</param>
 		/// <param name="pathFunc">A function that returns the path where this method can save the schema asset.  Set to null to not create an in-project asset.</param>
 		/// <returns>The created schema object.</returns>
-		public AddressableAssetGroupSchema AddSchema(AddressableAssetGroupSchema schema, AddressableAssetSettings aaSettings) {
+		public AddressableAssetGroupSchema AddSchema(AddressableAssetGroupSchema schema) {
 			if(schema == null) {
 				Debug.LogWarning("Cannot add null Schema object.");
 				return null;
@@ -60,7 +60,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 				return schema;
 			}*/
 
-			var assetName = schema.GetDesiredLocation(aaSettings);
+			var assetName = schema.DesiredLocation;
 			if(File.Exists(assetName)) {
 				Debug.LogWarningFormat("Schema asset already exists at path {0}, relinking.", assetName);
 				var existingSchema = AssetDatabase.LoadAssetAtPath(assetName, type) as AddressableAssetGroupSchema;
@@ -86,7 +86,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 		/// <param name="type">The schema type. This type must not already be added.</param>
 		/// <param name="pathFunc">A function that returns the path where this method can save the schema asset.  Set to null to not create an in-project asset.</param>
 		/// <returns>The created schema object.</returns>
-		public AddressableAssetGroupSchema AddSchema(Type type, AddressableAssetSettings aaSettings) {
+		public AddressableAssetGroupSchema AddSchema(Type type) {
 			if(type == null) {
 				Debug.LogWarning("Cannot add null Schema type.");
 				return null;
@@ -111,7 +111,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 				return existingSchema;
 			}*/
 			var schema = ScriptableObject.CreateInstance(type) as AddressableAssetGroupSchema;
-			var assetName = schema.GetDesiredLocation(aaSettings);
+			var assetName = schema.DesiredLocation;
 			if(!string.IsNullOrEmpty(assetName)) {
 				var dir = Path.GetDirectoryName(assetName);
 				if(!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
@@ -187,7 +187,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 			m_Schemas.Clear();
 		}
 
-		internal bool RenameSchemaAssets(AddressableAssetSettings aaSettings) {
+		internal bool RenameSchemaAssets() {
 			bool result = true;
 			foreach(var schema in m_Schemas) {
 				string guid;
@@ -198,7 +198,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 				if(string.IsNullOrEmpty(path))
 					continue;
 
-				string newPath = schema.GetDesiredLocation(aaSettings);
+				string newPath = schema.DesiredLocation;
 				if(path == newPath)
 					continue;
 

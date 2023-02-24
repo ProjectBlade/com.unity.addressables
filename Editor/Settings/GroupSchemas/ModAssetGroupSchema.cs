@@ -1,8 +1,8 @@
 using ProjectBlade.Core.Runtime.Modding;
 
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 
 using UnityEditor.AddressableAssets.HostingServices;
 
@@ -34,9 +34,32 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			SchemaSerializedObject.ApplyModifiedProperties();
 
-			PackageManager.PackageInfo package = PackageManager.PackageInfo.FindForAssetPath(AssetDatabase.GetAssetPath(mod));
+			string groupPath = AssetDatabase.GetAssetPath(Group);
+			string desiredGroupPath = DesiredGroupLocation;
 
-			//package.
+			UnityEngine.GUI.enabled = !IsGroupInDesiredLocation;
+
+			if(GUILayout.Button("Move Group into Mod package")) {
+
+				Directory.CreateDirectory(Path.GetDirectoryName(desiredGroupPath));
+
+				AssetDatabase.MoveAsset(groupPath, desiredGroupPath);
+
+			}
+
+			string desiredPath = DesiredLocation;
+
+			UnityEngine.GUI.enabled = !IsInDesiredLocation;
+
+			if(GUILayout.Button("Move Schema into Mod package")) {
+
+				Directory.CreateDirectory(Path.GetDirectoryName(desiredPath));
+
+				AssetDatabase.MoveAsset(AssetDatabase.GetAssetPath(this), desiredPath);
+
+			}
+
+			UnityEngine.GUI.enabled = true;
 
 			base.OnGUI();
 
@@ -61,10 +84,37 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		}
 
-		internal override int DetermineSelectedIndex(List<ProfileGroupType> groupTypes,
-														int defaultValue,
-														AddressableAssetSettings addressableAssetSettings,
-														HashSet<string> vars) => defaultValue;
+		public override string DesiredLocation {
+
+			get {
+
+				if(mod == null) {
+
+					return base.DesiredLocation;
+
+				}
+
+				string packagePath = PackageManager.PackageInfo.FindForAssetPath(AssetDatabase.GetAssetPath(mod)).assetPath;
+
+				return Path.Combine(packagePath, "Assets", "Addressables", "Schemas", DesiredFileName);
+
+			}
+
+		}
+
+		public virtual string DesiredGroupLocation {
+
+			get {
+
+				string packagePath = PackageManager.PackageInfo.FindForAssetPath(AssetDatabase.GetAssetPath(mod)).assetPath;
+
+				return Path.Combine(packagePath, "Assets", "Addressables", "Groups", Path.GetFileName(AssetDatabase.GetAssetPath(Group)));
+
+			}
+
+		}
+
+		public virtual bool IsGroupInDesiredLocation => Path.GetFullPath(AssetDatabase.GetAssetPath(Group)).Equals(Path.GetFullPath(DesiredGroupLocation));
 
 	}
 

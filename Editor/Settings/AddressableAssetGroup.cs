@@ -106,7 +106,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 								bool success = false;
 								if(string.IsNullOrEmpty(setPath)) {
 									name = m_GroupName = newName;
-									success = RenameSchemaAssets(Settings);
+									success = RenameSchemaAssets();
 								}
 
 								if(success == false) {
@@ -156,18 +156,14 @@ namespace UnityEditor.AddressableAssets.Settings {
 			get { return m_SchemaSet.Types; }
 		}
 
-		string GetSchemaAssetPath(Type type) {
-			return Settings.IsPersisted ? (Settings.GroupSchemaFolder + "/" + Name + "_" + type.Name + ".asset") : string.Empty;
-		}
-
 		/// <summary>
 		/// Adds a copy of the provided schema object.
 		/// </summary>
 		/// <param name="schema">The schema to add. A copy will be made and saved in a folder relative to the main Addressables settings asset. </param>
 		/// <param name="postEvent">Determines if this method call will post an event to the internal addressables event system</param>
 		/// <returns>The created schema object.</returns>
-		public AddressableAssetGroupSchema AddSchema(AddressableAssetGroupSchema schema, AddressableAssetSettings aaSetings, bool postEvent = true) {
-			var added = m_SchemaSet.AddSchema(schema, aaSetings);
+		public AddressableAssetGroupSchema AddSchema(AddressableAssetGroupSchema schema, bool postEvent = true) {
+			var added = m_SchemaSet.AddSchema(schema);
 			if(added != null) {
 				added.Group = this;
 				if(m_Settings && m_Settings.IsPersisted)
@@ -187,8 +183,8 @@ namespace UnityEditor.AddressableAssets.Settings {
 		/// <param name="type">The schema type. This type must not already be added.</param>
 		/// <param name="postEvent">Determines if this method call will post an event to the internal addressables event system</param>
 		/// <returns>The created schema object.</returns>
-		public AddressableAssetGroupSchema AddSchema(Type type, AddressableAssetSettings aaSetings, bool postEvent = true) {
-			var added = m_SchemaSet.AddSchema(type, aaSetings);
+		public AddressableAssetGroupSchema AddSchema(Type type, bool postEvent = true) {
+			var added = m_SchemaSet.AddSchema(type);
 			if(added != null) {
 				added.Group = this;
 				if(m_Settings && m_Settings.IsPersisted)
@@ -208,8 +204,8 @@ namespace UnityEditor.AddressableAssets.Settings {
 		/// <param name="postEvent">Determines if this method call will post an event to the internal addressables event system</param>
 		/// <typeparam name="TSchema">The schema type. This type must not already be added.</typeparam>
 		/// <returns>The created schema object.</returns>
-		public TSchema AddSchema<TSchema>(AddressableAssetSettings aaSetings, bool postEvent = true) where TSchema : AddressableAssetGroupSchema {
-			return AddSchema(typeof(TSchema), aaSetings, postEvent) as TSchema;
+		public TSchema AddSchema<TSchema>(bool postEvent = true) where TSchema : AddressableAssetGroupSchema {
+			return AddSchema(typeof(TSchema), postEvent) as TSchema;
 		}
 
 		/// <summary>
@@ -735,8 +731,8 @@ namespace UnityEditor.AddressableAssets.Settings {
 			return -1;
 		}
 
-		private bool RenameSchemaAssets(AddressableAssetSettings aaSettings) {
-			return m_SchemaSet.RenameSchemaAssets(aaSettings);
+		private bool RenameSchemaAssets() {
+			return m_SchemaSet.RenameSchemaAssets();
 		}
 	}
 }

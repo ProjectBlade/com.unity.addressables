@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 
 using UnityEditor.AddressableAssets.GUI;
@@ -146,6 +147,8 @@ namespace UnityEditor.AddressableAssets.Settings {
 				}
 			}
 		}
-		public virtual string GetDesiredLocation(AddressableAssetSettings aaSettings) => aaSettings.IsPersisted ? (aaSettings.GroupSchemaFolder + "/" + Group.Name + "_" + GetType().Name + ".asset") : string.Empty;
+		public virtual string DesiredFileName => Group.Name + "_" + GetType().Name + ".asset";
+		public virtual string DesiredLocation => Group.Settings.IsPersisted ? (Group.Settings.GroupSchemaFolder + "/" + DesiredFileName) : string.Empty;
+		public virtual bool IsInDesiredLocation => Path.GetFullPath(AssetDatabase.GetAssetPath(this)).Equals(Path.GetFullPath(DesiredLocation));
 	}
 }

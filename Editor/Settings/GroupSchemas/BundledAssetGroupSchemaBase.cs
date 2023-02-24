@@ -1286,10 +1286,10 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 		protected abstract void ShowSelectedPropertyPathPair();
 
-		internal abstract int DetermineSelectedIndex(List<ProfileGroupType> groupTypes,
+		internal virtual int DetermineSelectedIndex(List<ProfileGroupType> groupTypes,
 														int defaultValue,
 														AddressableAssetSettings addressableAssetSettings,
-														HashSet<string> vars);
+														HashSet<string> vars) => defaultValue;
 
 	}
 

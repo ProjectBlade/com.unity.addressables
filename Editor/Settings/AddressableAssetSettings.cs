@@ -2096,7 +2096,7 @@ namespace UnityEditor.AddressableAssets.Settings {
 
 			if(schemasToCopy != null) {
 				foreach(var s in schemasToCopy)
-					group.AddSchema(s, this, false);
+					group.AddSchema(s, false);
 			}
 
 			foreach(var t in types)
