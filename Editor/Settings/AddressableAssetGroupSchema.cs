@@ -147,8 +147,9 @@ namespace UnityEditor.AddressableAssets.Settings {
 				}
 			}
 		}
+		public virtual AddressableAssetSettings GroupSettings => (Group != null && Group.Settings != null) ? Group.Settings : AddressableAssetSettingsDefaultObject.Settings;
 		public virtual string DesiredFileName => Group.Name + "_" + GetType().Name + ".asset";
-		public virtual string DesiredLocation => Group.Settings.IsPersisted ? (Group.Settings.GroupSchemaFolder + "/" + DesiredFileName) : string.Empty;
+		public virtual string DesiredLocation => GroupSettings.IsPersisted ? (GroupSettings.GroupSchemaFolder + "/" + DesiredFileName) : string.Empty;
 		public virtual bool IsInDesiredLocation => Path.GetFullPath(AssetDatabase.GetAssetPath(this)).Equals(Path.GetFullPath(DesiredLocation));
 	}
 }

@@ -184,18 +184,25 @@ namespace UnityEditor.AddressableAssets.Settings {
 		/// <param name="postEvent">Determines if this method call will post an event to the internal addressables event system</param>
 		/// <returns>The created schema object.</returns>
 		public AddressableAssetGroupSchema AddSchema(Type type, bool postEvent = true) {
-			var added = m_SchemaSet.AddSchema(type);
+
+			AddressableAssetGroupSchema added = m_SchemaSet.AddSchema(type, this);
+
 			if(added != null) {
-				added.Group = this;
-				if(m_Settings && m_Settings.IsPersisted)
+
+				if(m_Settings && m_Settings.IsPersisted) {
+
 					EditorUtility.SetDirty(added);
+
+				}
 
 				SetDirty(AddressableAssetSettings.ModificationEvent.GroupSchemaAdded, this, postEvent, true);
 
 				AssetDatabase.SaveAssets();
+
 			}
 
 			return added;
+
 		}
 
 		/// <summary>

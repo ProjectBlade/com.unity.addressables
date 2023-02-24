@@ -106,6 +106,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			get {
 
+				if(mod == null) {
+
+					return null;
+
+				}
+
 				string packagePath = PackageManager.PackageInfo.FindForAssetPath(AssetDatabase.GetAssetPath(mod)).assetPath;
 
 				return Path.Combine(packagePath, "Assets", "Addressables", "Groups", Path.GetFileName(AssetDatabase.GetAssetPath(Group)));

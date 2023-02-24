@@ -537,7 +537,7 @@ namespace UnityEditor.AddressableAssets.GUI {
 
 				case ColumnId.Id: {
 					args.rowRect = cellRect;
-					args.label = args.label.Contains('-') ?
+					args.label = item.IsGroup && args.label.Contains('-') ?
 									args.label[(args.label.LastIndexOf('-') + 1)..] :
 									args.label;
 					base.RowGUI(args);

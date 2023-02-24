@@ -86,21 +86,32 @@ namespace UnityEditor.AddressableAssets.Settings {
 		/// <param name="type">The schema type. This type must not already be added.</param>
 		/// <param name="pathFunc">A function that returns the path where this method can save the schema asset.  Set to null to not create an in-project asset.</param>
 		/// <returns>The created schema object.</returns>
-		public AddressableAssetGroupSchema AddSchema(Type type) {
+		public AddressableAssetGroupSchema AddSchema(Type type, AddressableAssetGroup group) {
+
 			if(type == null) {
+
 				Debug.LogWarning("Cannot add null Schema type.");
+
 				return null;
+
 			}
 
 			if(!typeof(AddressableAssetGroupSchema).IsAssignableFrom(type)) {
+
 				Debug.LogWarningFormat("Invalid Schema type {0}. Schemas must inherit from AddressableAssetGroupSchema.", type.FullName);
+
 				return null;
+
 			}
 
-			var existing = GetSchema(type);
+			AddressableAssetGroupSchema existing = GetSchema(type);
+
 			if(existing != null) {
+
 				Debug.LogWarningFormat("Cannot add multiple schemas of the same type: {0}.", existing.GetType().FullName);
+
 				return existing;
+
 			}
 
 			/*var assetName = pathFunc(type);
@@ -110,17 +121,31 @@ namespace UnityEditor.AddressableAssets.Settings {
 				m_Schemas.Add(existingSchema);
 				return existingSchema;
 			}*/
-			var schema = ScriptableObject.CreateInstance(type) as AddressableAssetGroupSchema;
-			var assetName = schema.DesiredLocation;
+
+			AddressableAssetGroupSchema schema = ScriptableObject.CreateInstance(type) as AddressableAssetGroupSchema;
+
+			schema.Group = group;
+
+			string assetName = schema.DesiredLocation;
+
 			if(!string.IsNullOrEmpty(assetName)) {
-				var dir = Path.GetDirectoryName(assetName);
-				if(!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+
+				string dir = Path.GetDirectoryName(assetName);
+
+				if(!string.IsNullOrEmpty(dir) && !Directory.Exists(dir)) {
+
 					Directory.CreateDirectory(dir);
+
+				}
+
 				AssetDatabase.CreateAsset(schema, assetName);
+
 			}
 
 			m_Schemas.Add(schema);
+
 			return schema;
+
 		}
 
 		/// <summary>
