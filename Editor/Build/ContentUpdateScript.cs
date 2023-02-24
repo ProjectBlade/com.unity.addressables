@@ -942,11 +942,11 @@ namespace UnityEditor.AddressableAssets.Build {
 		/// <param name="groupName">The name of the new group.</param>
 		public static void CreateContentUpdateGroup(AddressableAssetSettings settings, List<AddressableAssetEntry> items, string groupName) {
 			var contentGroup = settings.CreateGroup(settings.FindUniqueGroupName(groupName), false, false, true, null);
-			var schema = contentGroup.AddSchema<BundledAssetGroupSchemaBase>();
+			var schema = contentGroup.AddSchema<BundledAssetGroupSchemaBase>(settings);
 			schema.SetBuildPath(settings, AddressableAssetSettings.kRemoteBuildPath);
 			schema.SetLoadPath(settings, AddressableAssetSettings.kRemoteLoadPath);
 			schema.BundleMode = BundledAssetGroupSchemaBase.BundlePackingMode.PackTogether;
-			contentGroup.AddSchema<ContentUpdateGroupSchema>().StaticContent = false;
+			contentGroup.AddSchema<ContentUpdateGroupSchema>(settings).StaticContent = false;
 			settings.MoveEntries(items, contentGroup);
 		}
 

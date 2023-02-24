@@ -146,5 +146,6 @@ namespace UnityEditor.AddressableAssets.Settings {
 				}
 			}
 		}
+		public virtual string GetDesiredLocation(AddressableAssetSettings aaSettings) => aaSettings.IsPersisted ? (aaSettings.GroupSchemaFolder + "/" + Group.Name + "_" + GetType().Name + ".asset") : string.Empty;
 	}
 }

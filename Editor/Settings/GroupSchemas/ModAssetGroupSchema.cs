@@ -32,6 +32,12 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			EditorGUILayout.PropertyField(SchemaSerializedObject.FindProperty("mod"));
 
+			SchemaSerializedObject.ApplyModifiedProperties();
+
+			PackageManager.PackageInfo package = PackageManager.PackageInfo.FindForAssetPath(AssetDatabase.GetAssetPath(mod));
+
+			//package.
+
 			base.OnGUI();
 
 		}

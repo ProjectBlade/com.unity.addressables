@@ -232,7 +232,7 @@ namespace UnityEditor.AddressableAssets.GUI {
 						var type = m_SchemaTypes[i];
 
 						if(m_GroupTarget.GetSchema(type) == null) {
-							menu.AddItem(new GUIContent(AddressableAssetUtility.GetCachedTypeDisplayName(type), ""), false, () => OnAddSchema(type));
+							menu.AddItem(new GUIContent(AddressableAssetUtility.GetCachedTypeDisplayName(type), ""), false, () => OnAddSchema(type, m_GroupTarget.Settings));
 						}
 						else {
 							menu.AddDisabledItem(new GUIContent(AddressableAssetUtility.GetCachedTypeDisplayName(type), ""), true);
@@ -249,14 +249,14 @@ namespace UnityEditor.AddressableAssets.GUI {
 			EditorGUILayout.EndVertical();
 		}
 
-		void OnAddSchema(Type schemaType, bool multiSelect = false) {
+		void OnAddSchema(Type schemaType, AddressableAssetSettings aaSettings, bool multiSelect = false) {
 			if(targets.Length > 1) {
 				foreach(var t in m_GroupTargets)
 					if(!t.HasSchema(schemaType))
-						t.AddSchema(schemaType);
+						t.AddSchema(schemaType, aaSettings);
 			}
 			else
-				m_GroupTarget.AddSchema(schemaType);
+				m_GroupTarget.AddSchema(schemaType, aaSettings);
 		}
 
 		class GroupSchemasCompare : IEqualityComparer<AddressableAssetGroupSchema> {

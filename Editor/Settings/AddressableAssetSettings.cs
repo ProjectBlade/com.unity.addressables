@@ -2096,11 +2096,11 @@ namespace UnityEditor.AddressableAssets.Settings {
 
 			if(schemasToCopy != null) {
 				foreach(var s in schemasToCopy)
-					group.AddSchema(s, false);
+					group.AddSchema(s, this, false);
 			}
 
 			foreach(var t in types)
-				group.AddSchema(t);
+				group.AddSchema(t, this);
 
 			if(!m_GroupAssets.Contains(group))
 				groups.Add(group);
