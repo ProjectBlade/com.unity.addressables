@@ -1,4 +1,5 @@
 using ProjectBlade.Core.Runtime.Modding;
+using ProjectBlade.Core.Runtime.Util;
 
 using System;
 using System.ComponentModel;
@@ -37,9 +38,11 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 			string groupPath = AssetDatabase.GetAssetPath(Group);
 			string desiredGroupPath = DesiredGroupLocation;
 
-			UnityEngine.GUI.enabled = !IsGroupInDesiredLocation;
+			UnityEngine.GUI.enabled = mod && !IsGroupInDesiredLocation;
 
 			if(GUILayout.Button("Move Group into Mod package")) {
+
+				Debug.Log($"Moving Group from {groupPath} to {desiredGroupPath}");
 
 				Directory.CreateDirectory(Path.GetDirectoryName(desiredGroupPath));
 
@@ -53,9 +56,24 @@ namespace UnityEditor.AddressableAssets.Settings.GroupSchemas {
 
 			if(GUILayout.Button("Move Schema into Mod package")) {
 
+				Debug.Log($"Moving Schema from {AssetDatabase.GetAssetPath(this)} to {desiredPath}");
+
 				Directory.CreateDirectory(Path.GetDirectoryName(desiredPath));
 
 				AssetDatabase.MoveAsset(AssetDatabase.GetAssetPath(this), desiredPath);
+
+			}
+
+			string modGuid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(mod));
+
+			UnityEngine.GUI.enabled = mod && AddressableAssetSettingsDefaultObject.Settings.FindAssetEntry(modGuid) == null;
+
+			if(GUILayout.Button("Make Mod Object addressable")) {
+
+				AddressableAssetEntry entry = AddressableAssetSettingsDefaultObject.Settings.CreateOrMoveEntry(modGuid, Group, false);
+
+				entry.SetLabel(Constants.Labels.MOD, true);
+				entry.SetAddress("Mod");
 
 			}
 
